@@ -13,7 +13,7 @@ import 'package:vector_math/vector_math_64.dart' as vector_math;
 /// An image cropper that is customizable.
 /// You can rotate, scale and translate either
 /// through gestures or a controller
-class GnkImageCrop extends StatefulWidget {
+class GnkImageCropWidget extends StatefulWidget {
   /// The image to crop
   final ImageProvider image;
 
@@ -113,7 +113,7 @@ class GnkImageCrop extends StatefulWidget {
   /// we've provided two default painters as inspiration
   /// `DottedCropPathPainter.drawPath` and
   /// `SolidCropPathPainter.drawPath`
-  GnkImageCrop({
+  GnkImageCropWidget({
     required this.image,
     required this.cropController,
     this.overlayColor = const Color.fromRGBO(0, 0, 0, 0.5),
@@ -142,10 +142,10 @@ class GnkImageCrop extends StatefulWidget {
         super(key: key);
 
   @override
-  _GnkImageCropState createState() => _GnkImageCropState();
+  _GnkImageCropWidgetState createState() => _GnkImageCropWidgetState();
 }
 
-class _GnkImageCropState extends State<GnkImageCrop>
+class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
     with CustomImageCropListener {
   CropImageData? _dataTransitionStart;
   late Path _path;
@@ -167,7 +167,7 @@ class _GnkImageCropState extends State<GnkImageCrop>
   }
 
   @override
-  void didUpdateWidget(GnkImageCrop oldWidget) {
+  void didUpdateWidget(GnkImageCropWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.image != widget.image) _getImage();
   }

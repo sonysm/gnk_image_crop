@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:gnk_image_crop/src/models/params_model.dart';
-import 'package:gnk_image_crop/src/widgets/custom_image_crop_widget.dart';
+import 'package:gnk_image_crop/src/widgets/gnk_image_crop_widget.dart';
 
 /// Returns params to use for cropping image.
 OnCropParams caclulateOnCropParams({
