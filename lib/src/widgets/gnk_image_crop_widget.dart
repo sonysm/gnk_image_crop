@@ -2,6 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:gnk_image_crop/gnk_image_crop.dart';
 import 'package:gnk_image_crop/src/calculators/calculate_crop_fit_params.dart';
 import 'package:gnk_image_crop/src/calculators/calculate_on_crop_params.dart';
@@ -242,6 +247,7 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
           onMoveUpdate: onMoveUpdate,
           onScaleStart: onScaleStart,
           onScaleUpdate: onScaleUpdate,
+          behavior: HitTestBehavior.translucent,
           child: Container(
             width: _width,
             height: _height,
@@ -268,6 +274,66 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
                   ),
                 ),
                 widget.drawPath(_path, pathPaint: widget.pathPaint),
+                Positioned(
+                    top: 64,
+                    left: 16,
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context),
+                      child: const CircleAvatar(
+                        backgroundColor: Color(0xFF626771),
+                        radius: 16,
+                        child: Icon(Icons.close),
+                      ),
+                    )),
+                // Title count
+                Positioned(
+                    top: 64,
+                    left: 24,
+                    right: 24,
+                    child: Center(
+                        child: Text('1/1',
+                            style:
+                                TextStyle(fontSize: 15, color: Colors.white)))),
+                const Positioned(
+                    top: 120,
+                    left: 24,
+                    right: 24,
+                    child: Center(
+                        child: Text(
+                      'You can zoom and drag the image. All that is visible within the frame will be the final image.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 15, color: Colors.white),
+                    ))),
+
+                Positioned(
+                  bottom: 64,
+                  left: 16,
+                  right: 16,
+                  child: Center(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await widget.cropController.onCropImage();
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0.0,
+                        minimumSize: const Size(320, 44),
+                        backgroundColor: const Color(0xFF164A9F),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      child: const Text(
+                        'Apply',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
               ],
             ),
           ),
