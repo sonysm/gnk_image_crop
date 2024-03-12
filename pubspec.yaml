@@ -11,6 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  path_provider: any
+  gesture_x_detector: any
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
