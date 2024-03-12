@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
-
 import 'package:gnk_image_crop/gnk_image_crop.dart';
 import 'package:gnk_image_crop/src/calculators/calculate_crop_fit_params.dart';
 import 'package:gnk_image_crop/src/calculators/calculate_on_crop_params.dart';
@@ -15,7 +15,9 @@ import 'package:vector_math/vector_math_64.dart' as vector_math;
 /// through gestures or a controller
 class GnkImageCropWidget extends StatefulWidget {
   /// The image to crop
-  final ImageProvider image;
+  // final ImageProvider image;
+
+  final String imagePath;
 
   /// The controller that handles the cropping and
   /// changing of the cropping area
@@ -114,7 +116,7 @@ class GnkImageCropWidget extends StatefulWidget {
   /// `DottedCropPathPainter.drawPath` and
   /// `SolidCropPathPainter.drawPath`
   GnkImageCropWidget({
-    required this.image,
+    required this.imagePath,
     required this.cropController,
     this.overlayColor = const Color.fromRGBO(0, 0, 0, 0.5),
     this.backgroundColor = Colors.white,
@@ -154,8 +156,12 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
   ImageStream? _imageStream;
   ImageStreamListener? _imageListener;
 
+  late ImageProvider _image;
+
   @override
   void initState() {
+    _image = FileImage(File(widget.imagePath));
+
     super.initState();
     widget.cropController.addListener(this);
   }
@@ -169,12 +175,15 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
   @override
   void didUpdateWidget(GnkImageCropWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.image != widget.image) _getImage();
+    if (oldWidget.imagePath != widget.imagePath) _getImage();
   }
 
   void _getImage() {
     final oldImageStream = _imageStream;
-    _imageStream = widget.image.resolve(createLocalImageConfiguration(context));
+
+    _image = FileImage(File(widget.imagePath));
+
+    _imageStream = _image.resolve(createLocalImageConfiguration(context));
     if (_imageStream?.key != oldImageStream?.key) {
       if (_imageListener != null) {
         oldImageStream?.removeListener(_imageListener!);
@@ -247,9 +256,7 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
                         vector_math.Vector3(scale, scale, scale))
                       ..rotateZ(data.angle)
                       ..translate(-image.width / 2, -image.height / 2),
-                    child: Image(
-                      image: widget.image,
-                    ),
+                    child: Image(image: _image),
                   ),
                 ),
                 IgnorePointer(
