@@ -2,17 +2,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/painting.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:gnk_image_crop/gnk_image_crop.dart';
 import 'package:gnk_image_crop/src/calculators/calculate_crop_fit_params.dart';
 import 'package:gnk_image_crop/src/calculators/calculate_on_crop_params.dart';
 import 'package:gnk_image_crop/src/clippers/inverted_clipper.dart';
 import 'package:flutter/material.dart';
 import 'package:gesture_x_detector/gesture_x_detector.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
 /// An image cropper that is customizable.
@@ -36,13 +33,13 @@ class GnkImageCropWidget extends StatefulWidget {
 
   /// The shape of the cropping area.
   /// Possible values:
-  /// - [CustomCropShape.Circle] Crop area will be circular.
-  /// - [CustomCropShape.Square] Crop area will be a square.
-  /// - [CustomCropShape.Ratio] Crop area will have a specified aspect ratio.
+  /// - [CustomCropShape.circle] Crop area will be circular.
+  /// - [CustomCropShape.square] Crop area will be a square.
+  /// - [CustomCropShape.ratio] Crop area will have a specified aspect ratio.
   final CustomCropShape shape;
 
   /// Ratio of the cropping area.
-  /// If [shape] is set to [CustomCropShape.Ratio], this property is required.
+  /// If [shape] is set to [CustomCropShape.ratio], this property is required.
   /// For example, to create a square crop area, use [Ratio(width: 1, height: 1)].
   /// To create a rectangular crop area with a 16:9 aspect ratio, use [Ratio(width: 16, height: 9)].
   final Ratio? ratio;
@@ -104,6 +101,9 @@ class GnkImageCropWidget extends StatefulWidget {
   /// If use CustomCropShape.circle, the cropped image may have white blank.
   final bool forceInsideCropArea;
 
+  final String title;
+  final String subTitle;
+
   /// A custom image cropper widget
   ///
   /// Uses a `CustomImageCropController` to crop the image.
@@ -125,7 +125,7 @@ class GnkImageCropWidget extends StatefulWidget {
     required this.cropController,
     this.overlayColor = const Color.fromRGBO(0, 0, 0, 0.5),
     this.backgroundColor = Colors.white,
-    this.shape = CustomCropShape.Circle,
+    this.shape = CustomCropShape.circle,
     this.imageFit = CustomImageFit.fitCropSpace,
     this.cropPercentage = 0.8,
     this.drawPath = DottedCropPathPainter.drawPath,
@@ -139,11 +139,14 @@ class GnkImageCropWidget extends StatefulWidget {
     this.borderRadius = 0,
     Paint? imagePaintDuringCrop,
     this.forceInsideCropArea = false,
+    this.title = '1/1',
+    this.subTitle =
+        'You can zoom and drag the image. All that is visible within the frame will be the final image.',
     Key? key,
   })  : this.imagePaintDuringCrop = imagePaintDuringCrop ??
             (Paint()..filterQuality = FilterQuality.high),
         assert(
-          !(shape == CustomCropShape.Ratio && ratio == null),
+          !(shape == CustomCropShape.ratio && ratio == null),
           "If shape is set to Ratio, ratio should not be null.",
         ),
         super(key: key);
@@ -204,6 +207,23 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
     });
   }
 
+  _onCrop() async {
+    String? path;
+    var image = await widget.cropController.onCropImage();
+    if (image != null) {
+      final appDir = await getTemporaryDirectory();
+
+      /// generate
+      ///
+      File file = File('${appDir.path}/${const Uuid().v1()}.png')
+        ..writeAsBytes(image.bytes);
+
+      path = file.path;
+    }
+
+    if (mounted) Navigator.pop(context, path);
+  }
+
   @override
   void dispose() {
     if (_imageListener != null) {
@@ -218,7 +238,8 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
     final image = _imageAsUIImage;
     if (image == null) {
       return Center(
-        child: widget.customProgressIndicator ?? CircularProgressIndicator(),
+        child:
+            widget.customProgressIndicator ?? const CircularProgressIndicator(),
       );
     }
     return LayoutBuilder(
@@ -234,7 +255,8 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
           screenWidth: _width,
           aspectRatio: (widget.ratio?.width ?? 1) / (widget.ratio?.height ?? 1),
         );
-        final scale = data.scale * cropFitParams.additionalScale;
+        var scale = data.scale * cropFitParams.additionalScale;
+        // if (scale < 1) scale = 1;
         _path = _getPath(
           cropWidth: cropFitParams.cropSizeWidth,
           cropHeight: cropFitParams.cropSizeHeight,
@@ -247,6 +269,7 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
           onMoveUpdate: onMoveUpdate,
           onScaleStart: onScaleStart,
           onScaleUpdate: onScaleUpdate,
+          onMoveEnd: onMoveEnd,
           behavior: HitTestBehavior.translucent,
           child: Container(
             width: _width,
@@ -255,8 +278,8 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
             child: Stack(
               children: [
                 Positioned(
-                  left: data.x + _width / 2,
-                  top: data.y + _height / 2,
+                  left: data.x + (_width / 2),
+                  top: data.y + (_height / 2),
                   child: Transform(
                     transform: Matrix4.diagonal3(
                         vector_math.Vector3(scale, scale, scale))
@@ -291,18 +314,19 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
                     left: 24,
                     right: 24,
                     child: Center(
-                        child: Text('1/1',
-                            style:
-                                TextStyle(fontSize: 15, color: Colors.white)))),
-                const Positioned(
+                        child: Text(
+                      widget.title,
+                      style: const TextStyle(fontSize: 15, color: Colors.white),
+                    ))),
+                Positioned(
                     top: 120,
                     left: 24,
                     right: 24,
                     child: Center(
                         child: Text(
-                      'You can zoom and drag the image. All that is visible within the frame will be the final image.',
+                      widget.subTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 15, color: Colors.white),
+                      style: const TextStyle(fontSize: 15, color: Colors.white),
                     ))),
 
                 Positioned(
@@ -311,10 +335,7 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
                   right: 16,
                   child: Center(
                     child: ElevatedButton(
-                      onPressed: () async {
-                        await widget.cropController.onCropImage();
-                        Navigator.pop(context);
-                      },
+                      onPressed: _onCrop,
                       style: ElevatedButton.styleFrom(
                         elevation: 0.0,
                         minimumSize: const Size(320, 44),
@@ -376,6 +397,19 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
 
     widget.cropController
         .addTransition(CropImageData(x: event.delta.dx, y: event.delta.dy));
+  }
+
+  void onMoveEnd(MoveEvent event) {
+    final imageRact = (_getImageRect(_getInitialImageRect(), data.scale));
+    final pathRect = _path.getBounds();
+
+    var interRact = pathRect.intersect(imageRact);
+
+    if (interRact.isEmpty) {
+      widget.cropController.setData(CropImageData(scale: data.scale));
+
+      // widget.cropController.reset();
+    }
   }
 
   Rect _getInitialImageRect() {
@@ -504,7 +538,7 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
       bottomLeft = imageRect.bottomLeft;
     }
 
-    if (widget.shape == CustomCropShape.Circle) {
+    if (widget.shape == CustomCropShape.circle) {
       final anchor = max(pathRect.width, pathRect.height) / 2;
       final pathCenter = pathRect.center;
       return _getDistanceBetweenPointAndLine(pathCenter, topLeft, topRight) >=
@@ -589,7 +623,7 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
     }
 
     switch (widget.shape) {
-      case CustomCropShape.Circle:
+      case CustomCropShape.circle:
         return Path()
           ..addOval(
             Rect.fromCircle(
@@ -597,7 +631,7 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
               radius: cropWidth / 2,
             ),
           );
-      case CustomCropShape.Ratio:
+      case CustomCropShape.ratio:
         return Path()
           ..addRRect(
             RRect.fromRectAndRadius(
@@ -713,15 +747,15 @@ class _GnkImageCropWidgetState extends State<GnkImageCropWidget>
     setState(() {
       data = newData;
       // The same check should happen (once available) as in addTransition
-      data.scale = data.scale.clamp(0.1, 10.0);
+      data.scale = data.scale.clamp(0.5, 10.0);
     });
   }
 }
 
 enum CustomCropShape {
-  Circle,
-  Square,
-  Ratio,
+  circle,
+  square,
+  ratio,
 }
 
 enum CustomImageFit {

@@ -1,7 +1,18 @@
 name: gnk_image_crop
-description: "A new Flutter package project."
-version: 0.0.1
-homepage:
+description: "gnk_image_crop use for crop image one by one with dynamic ratio and using native dart."
+version: 0.0.2
+homepage: https://github.com/sonysm/gnk_image_crop
+
+# publish_to: https://pub.dev/gnk_image_crop
+
+# This package supports all platforms listed below.
+platforms:
+  android:
+  ios:
+  # linux:
+  # macos:
+  # web:
+  # windows:
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -11,8 +22,10 @@ dependencies:
   flutter:
     sdk: flutter
 
-  path_provider: any
-  gesture_x_detector: any
+  path_provider: ^2.1.2
+  gesture_x_detector: ^1.1.1
+  vector_math: ^2.1.4
+  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_test:
